@@ -22,7 +22,7 @@
 #include <memory>
 #include <string>
 
-#include "geometry_msgs/msg/twist.hpp"
+#include "geometry_msgs/msg/twist_stamped.hpp"
 #include "rclcpp/rclcpp.hpp"
 
 class AutocubeClientNode : public rclcpp::Node
@@ -35,7 +35,7 @@ public:
 private:
   void reader_twist_loop();
 
-  rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr twist_pub_;
+  rclcpp::Publisher<geometry_msgs::msg::TwistStamped>::SharedPtr twist_pub_;
 
   std::shared_ptr<grpc::Channel> channel_ = nullptr;
   std::unique_ptr<autocube::TwistService::Stub> stub_ = nullptr;

@@ -20,7 +20,7 @@ AutocubeClientNode::AutocubeClientNode(const rclcpp::NodeOptions & options)
   this->get_parameter("address", address_);
   this->get_parameter("cmd_vel_topic", cmd_vel_topic_);
 
-  twist_pub_ = this->create_publisher<geometry_msgs::msg::Twist>(cmd_vel_topic_, 10);
+  twist_pub_ = this->create_publisher<geometry_msgs::msg::TwistStamped>(cmd_vel_topic_, 10);
 
   channel_ = grpc::CreateChannel(address_, grpc::InsecureChannelCredentials());
   stub_ = autocube::TwistService::NewStub(channel_);
@@ -41,16 +41,21 @@ void AutocubeClientNode::reader_twist_loop()
 {
   autocube::TwistMessage msg;
 
-  while (running_ && twist_stream_->Read(&msg)) {
-    geometry_msgs::msg::Twist ros_msg;
-    ros_msg.linear.x = msg.linear_x();
-    ros_msg.linear.y = msg.linear_y();
-    ros_msg.linear.z = msg.linear_z();
-    ros_msg.angular.x = msg.angular_x();
-    ros_msg.angular.y = msg.angular_y();
-    ros_msg.angular.z = msg.angular_z();
+  while (running_) {
+    if(twist_stream_->Read(&msg)){
+      geometry_msgs::msg::TwistStamped ros_msg;
+      ros_msg.header.stamp = this->get_clock()->now();
+      ros_msg.header.frame_id = "base_link";
+      
+      ros_msg.twist.linear.x = msg.linear_x();
+      ros_msg.twist.linear.y = msg.linear_y();
+      ros_msg.twist.linear.z = msg.linear_z();
+      ros_msg.twist.angular.x = msg.angular_x();
+      ros_msg.twist.angular.y = msg.angular_y();
+      ros_msg.twist.angular.z = msg.angular_z();
 
-    twist_pub_->publish(ros_msg);
+      twist_pub_->publish(ros_msg);
+    }
   }
 
   RCLCPP_WARN(this->get_logger(), "Reader twist thread exited");
