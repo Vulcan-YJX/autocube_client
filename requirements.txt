@@ -1,3 +1,5 @@
 ros-humble-ros-base,autocube-config,libgrpc++-dev,protobuf-compiler-grpc,libprotobuf-dev,avahi-daemon,avahi-utils,libnss-mdns
+0.0.2
+    add grpc native dns.
 0.0.1
     init grpc client.
