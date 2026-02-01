@@ -18,6 +18,7 @@
 #include <grpcpp/grpcpp.h>
 #include <twist.grpc.pb.h>
 
+#include <cstdlib>
 #include <chrono>
 #include <memory>
 #include <string>

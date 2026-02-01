@@ -41,24 +41,22 @@ void AutocubeClientNode::reader_twist_loop()
 {
   autocube::TwistMessage msg;
 
-  while (running_) {
-    if(twist_stream_->Read(&msg)){
-      geometry_msgs::msg::TwistStamped ros_msg;
-      ros_msg.header.stamp = this->get_clock()->now();
-      ros_msg.header.frame_id = "base_link";
-      
-      ros_msg.twist.linear.x = msg.linear_x();
-      ros_msg.twist.linear.y = msg.linear_y();
-      ros_msg.twist.linear.z = msg.linear_z();
-      ros_msg.twist.angular.x = msg.angular_x();
-      ros_msg.twist.angular.y = msg.angular_y();
-      ros_msg.twist.angular.z = msg.angular_z();
+  while (running_ && twist_stream_->Read(&msg)) {
+    geometry_msgs::msg::TwistStamped ros_msg;
+    ros_msg.header.stamp = this->get_clock()->now();
+    ros_msg.header.frame_id = "base_link";
+    
+    ros_msg.twist.linear.x = msg.linear_x();
+    ros_msg.twist.linear.y = msg.linear_y();
+    ros_msg.twist.linear.z = msg.linear_z();
+    ros_msg.twist.angular.x = msg.angular_x();
+    ros_msg.twist.angular.y = msg.angular_y();
+    ros_msg.twist.angular.z = msg.angular_z();
 
-      twist_pub_->publish(ros_msg);
-    }
+    twist_pub_->publish(ros_msg);
   }
-
   RCLCPP_WARN(this->get_logger(), "Reader twist thread exited");
+  std::exit(EXIT_FAILURE);
 }
 
 AutocubeClientNode::~AutocubeClientNode()
