@@ -1,0 +1,19 @@
+[Unit]
+Description=Auto Cube ROS2 grpc client service.
+Requires=autocube-config.service
+After=autocube-config.service
+PartOf=autocube-config.service
+
+[Service]
+EnvironmentFile=/opt/autocube/autocube_env.conf
+WorkingDirectory=/opt/autocube
+ExecStart=/usr/bin/bash -c "source /opt/ros/humble/setup.bash && source /opt/autocube/autocube-client/setup.bash && ros2 launch autocube_client autocube_client.launch.py"
+User=root
+Group=root
+Restart=always
+RestartSec=10s
+
+[Install]
+WantedBy=multi-user.target
+
+

@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package autocube;
+
+// Battery 服务
+service BatteryService {
+  // 双向流：客户端发消息，服务端回 Ack 或广播
+  rpc BatteryStream(stream BatteryMessage) returns (stream BatteryMessage);
+}
+
+// Notification 消息
+message BatteryMessage {
+  double battery_one = 1;
+  double battery_two = 2;
+  double average = 3;
+}

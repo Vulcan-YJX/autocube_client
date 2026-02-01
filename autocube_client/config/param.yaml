@@ -1,0 +1,5 @@
+/**:
+  autocube_client_node:
+    ros__parameters:
+      address: "autocube.local:5050"
+      cmd_vel_topic: "/autocube/cmd_vel"
