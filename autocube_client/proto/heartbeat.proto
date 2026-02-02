@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package autocube;
+
+import "google/protobuf/empty.proto";
+
+service HeartbeatService {
+  rpc Heartbeat(google.protobuf.Empty) returns (google.protobuf.Empty);
+}

@@ -19,44 +19,131 @@ AutocubeClientNode::AutocubeClientNode(const rclcpp::NodeOptions & options)
 {
   this->get_parameter("address", address_);
   this->get_parameter("cmd_vel_topic", cmd_vel_topic_);
+  this->get_parameter("battery_type", battery_type_);
+  this->get_parameter("battery1_topic", battery1_topic_);
+  this->get_parameter("battery2_topic", battery2_topic_);
 
+  battery1_sub_ = this->create_subscription<sensor_msgs::msg::BatteryState>(
+    battery1_topic_,
+    10,
+    std::bind(&AutocubeClientNode::battery1_callback, this, std::placeholders::_1));
+
+  battery2_sub_ = this->create_subscription<sensor_msgs::msg::BatteryState>(
+    battery2_topic_,
+    10,
+    std::bind(&AutocubeClientNode::battery2_callback, this, std::placeholders::_1));
+  
   twist_pub_ = this->create_publisher<geometry_msgs::msg::TwistStamped>(cmd_vel_topic_, 10);
 
+  auto deadline =
+      std::chrono::system_clock::now() +
+      std::chrono::milliseconds(2000);
+  heartbeat_context_.set_deadline(deadline);
+
+
   channel_ = grpc::CreateChannel(address_, grpc::InsecureChannelCredentials());
-  stub_ = autocube::TwistService::NewStub(channel_);
+  twist_stub_ = autocube::TwistService::NewStub(channel_);
+  battery_stub_ = autocube::BatteryService::NewStub(channel_);
+  heartbeat_stub_ = autocube::HeartbeatService::NewStub(channel_);
 
-  twist_stream_ = stub_->TwistStream(&twist_context_);
-
+  twist_stream_ = twist_stub_->TwistStream(&twist_context_);
   if (!twist_stream_) {
-    RCLCPP_ERROR(this->get_logger(), "Failed to create gRPC stream");
+    RCLCPP_ERROR(this->get_logger(), "Failed to create twist stream");
+    return;
+  }
+
+  battery_stream_ = battery_stub_->BatteryStream(&battery_context_);
+  if (!battery_stream_) {
+    RCLCPP_ERROR(this->get_logger(), "Failed to create battery stream");
     return;
   }
 
   reader_thread_ = std::thread(&AutocubeClientNode::reader_twist_loop, this);
+  heartbeat_thread_ = std::thread(&AutocubeClientNode::heartbeat_loop, this);
 
   RCLCPP_INFO(this->get_logger(), "gRPC Server listening on: '%s'", address_.c_str());
+
+  timer_ =
+    this->create_wall_timer(std::chrono::milliseconds(100), std::bind(&AutocubeClientNode::timer_callback, this));
+}
+
+void AutocubeClientNode::battery1_callback(const sensor_msgs::msg::BatteryState::SharedPtr msg)
+{
+  battery1_percent = msg->percentage;
+
+}
+
+void AutocubeClientNode::battery2_callback(const sensor_msgs::msg::BatteryState::SharedPtr msg)
+{
+  battery2_percent = msg->percentage;
 }
 
 void AutocubeClientNode::reader_twist_loop()
 {
   autocube::TwistMessage msg;
 
-  while (running_ && twist_stream_->Read(&msg)) {
-    geometry_msgs::msg::TwistStamped ros_msg;
-    ros_msg.header.stamp = this->get_clock()->now();
-    ros_msg.header.frame_id = "base_link";
-    
-    ros_msg.twist.linear.x = msg.linear_x();
-    ros_msg.twist.linear.y = msg.linear_y();
-    ros_msg.twist.linear.z = msg.linear_z();
-    ros_msg.twist.angular.x = msg.angular_x();
-    ros_msg.twist.angular.y = msg.angular_y();
-    ros_msg.twist.angular.z = msg.angular_z();
+  while (running_) {
+    if(twist_stream_->Read(&msg)){
+      geometry_msgs::msg::TwistStamped ros_msg;
+      ros_msg.header.stamp = this->get_clock()->now();
+      ros_msg.header.frame_id = "base_link";
+      
+      ros_msg.twist.linear.x = msg.linear_x();
+      ros_msg.twist.linear.y = msg.linear_y();
+      ros_msg.twist.linear.z = msg.linear_z();
+      ros_msg.twist.angular.x = msg.angular_x();
+      ros_msg.twist.angular.y = msg.angular_y();
+      ros_msg.twist.angular.z = msg.angular_z();
 
-    twist_pub_->publish(ros_msg);
+      twist_pub_->publish(ros_msg);
+    }
   }
   RCLCPP_WARN(this->get_logger(), "Reader twist thread exited");
-  std::exit(EXIT_FAILURE);
+}
+
+void AutocubeClientNode::heartbeat_loop()
+{
+  using namespace std::chrono_literals;
+
+  while (running_) {
+
+    grpc::ClientContext context;
+
+    // 设置 3 秒超时
+    context.set_deadline(
+      std::chrono::system_clock::now() +
+      std::chrono::seconds(3)
+    );
+
+    google::protobuf::Empty req;
+    google::protobuf::Empty resp;
+
+    grpc::Status status =
+      heartbeat_stub_->Heartbeat(&context, req, &resp);
+
+    if (status.ok()) {
+      RCLCPP_DEBUG(this->get_logger(), "Heartbeat OK");
+    } else {
+      RCLCPP_ERROR(this->get_logger(),
+        "Heartbeat failed: %s",
+        status.error_message().c_str());
+      std::exit(EXIT_FAILURE);
+    }
+
+    // 每秒发送一次
+    std::this_thread::sleep_for(1s);
+  }
+}
+
+void AutocubeClientNode::timer_callback()
+{
+  auto battery_average = (battery1_percent + battery2_percent) / 2.0;
+  autocube::BatteryMessage battery_msg;
+  battery_msg.set_battery_one(battery1_percent);
+  battery_msg.set_battery_two(battery2_percent);
+  battery_msg.set_average(battery_average);
+  battery_msg.set_type(battery_type_);
+  battery_stream_->Write(battery_msg);
 }
 
 AutocubeClientNode::~AutocubeClientNode()
@@ -69,6 +156,10 @@ AutocubeClientNode::~AutocubeClientNode()
 
   if (reader_thread_.joinable()) {
     reader_thread_.join();
+  }
+
+  if (heartbeat_thread_.joinable()) {
+    heartbeat_thread_.join();
   }
 
   auto status = twist_stream_->Finish();

@@ -3,3 +3,6 @@
     ros__parameters:
       address: "autocube.local:5050"
       cmd_vel_topic: "/autocube/cmd_vel"
+      battery_type: 0
+      battery1_topic: "/battery1"
+      battery2_topic: "/battery2"

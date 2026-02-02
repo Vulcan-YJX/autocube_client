@@ -17,6 +17,8 @@
 
 #include <grpcpp/grpcpp.h>
 #include <twist.grpc.pb.h>
+#include <battery.grpc.pb.h>
+#include <heartbeat.grpc.pb.h>
 
 #include <cstdlib>
 #include <chrono>
@@ -25,6 +27,7 @@
 
 #include "geometry_msgs/msg/twist_stamped.hpp"
 #include "rclcpp/rclcpp.hpp"
+#include "sensor_msgs/msg/battery_state.hpp"
 
 class AutocubeClientNode : public rclcpp::Node
 {
@@ -36,18 +39,47 @@ public:
 private:
   void reader_twist_loop();
 
+  void heartbeat_loop();
+
+  void battery1_callback(const sensor_msgs::msg::BatteryState::SharedPtr msg);
+
+  void battery2_callback(const sensor_msgs::msg::BatteryState::SharedPtr msg);
+
+  void timer_callback();
+
+  rclcpp::TimerBase::SharedPtr timer_;
+
+  rclcpp::Subscription<sensor_msgs::msg::BatteryState>::SharedPtr battery1_sub_;
+  rclcpp::Subscription<sensor_msgs::msg::BatteryState>::SharedPtr battery2_sub_;
+
   rclcpp::Publisher<geometry_msgs::msg::TwistStamped>::SharedPtr twist_pub_;
 
-  std::shared_ptr<grpc::Channel> channel_ = nullptr;
-  std::unique_ptr<autocube::TwistService::Stub> stub_ = nullptr;
   grpc::ClientContext twist_context_;
+  grpc::ClientContext battery_context_;
+  grpc::ClientContext heartbeat_context_;
+
+  std::shared_ptr<grpc::Channel> channel_ = nullptr;
+  std::unique_ptr<autocube::TwistService::Stub> twist_stub_ = nullptr;
   std::shared_ptr<grpc::ClientReaderWriter<autocube::TwistMessage, autocube::TwistMessage>>
     twist_stream_ = nullptr;
 
+  std::unique_ptr<autocube::BatteryService::Stub> battery_stub_ = nullptr;
+  std::shared_ptr<grpc::ClientReaderWriter<autocube::BatteryMessage, autocube::BatteryMessage>>
+    battery_stream_ = nullptr;
+
+  std::unique_ptr<autocube::HeartbeatService::Stub> heartbeat_stub_ = nullptr;
+
+  double battery1_percent = 0;
+  double battery2_percent = 0;
+
+  int battery_type_ = 0;
   std::string address_;
   std::string cmd_vel_topic_;
+  std::string battery1_topic_;
+  std::string battery2_topic_;
 
   // Thread
+  std::thread heartbeat_thread_;
   std::thread reader_thread_;
   std::atomic<bool> running_;
 };
