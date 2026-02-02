@@ -24,22 +24,14 @@ AutocubeClientNode::AutocubeClientNode(const rclcpp::NodeOptions & options)
   this->get_parameter("battery2_topic", battery2_topic_);
 
   battery1_sub_ = this->create_subscription<sensor_msgs::msg::BatteryState>(
-    battery1_topic_,
-    10,
+    battery1_topic_, 10,
     std::bind(&AutocubeClientNode::battery1_callback, this, std::placeholders::_1));
 
   battery2_sub_ = this->create_subscription<sensor_msgs::msg::BatteryState>(
-    battery2_topic_,
-    10,
+    battery2_topic_, 10,
     std::bind(&AutocubeClientNode::battery2_callback, this, std::placeholders::_1));
-  
+
   twist_pub_ = this->create_publisher<geometry_msgs::msg::TwistStamped>(cmd_vel_topic_, 10);
-
-  auto deadline =
-      std::chrono::system_clock::now() +
-      std::chrono::milliseconds(2000);
-  heartbeat_context_.set_deadline(deadline);
-
 
   channel_ = grpc::CreateChannel(address_, grpc::InsecureChannelCredentials());
   twist_stub_ = autocube::TwistService::NewStub(channel_);
@@ -63,14 +55,13 @@ AutocubeClientNode::AutocubeClientNode(const rclcpp::NodeOptions & options)
 
   RCLCPP_INFO(this->get_logger(), "gRPC Server listening on: '%s'", address_.c_str());
 
-  timer_ =
-    this->create_wall_timer(std::chrono::milliseconds(100), std::bind(&AutocubeClientNode::timer_callback, this));
+  timer_ = this->create_wall_timer(
+    std::chrono::milliseconds(100), std::bind(&AutocubeClientNode::timer_callback, this));
 }
 
 void AutocubeClientNode::battery1_callback(const sensor_msgs::msg::BatteryState::SharedPtr msg)
 {
   battery1_percent = msg->percentage;
-
 }
 
 void AutocubeClientNode::battery2_callback(const sensor_msgs::msg::BatteryState::SharedPtr msg)
@@ -83,11 +74,11 @@ void AutocubeClientNode::reader_twist_loop()
   autocube::TwistMessage msg;
 
   while (running_) {
-    if(twist_stream_->Read(&msg)){
+    if (twist_stream_->Read(&msg)) {
       geometry_msgs::msg::TwistStamped ros_msg;
       ros_msg.header.stamp = this->get_clock()->now();
       ros_msg.header.frame_id = "base_link";
-      
+
       ros_msg.twist.linear.x = msg.linear_x();
       ros_msg.twist.linear.y = msg.linear_y();
       ros_msg.twist.linear.z = msg.linear_z();
@@ -103,35 +94,18 @@ void AutocubeClientNode::reader_twist_loop()
 
 void AutocubeClientNode::heartbeat_loop()
 {
-  using namespace std::chrono_literals;
-
   while (running_) {
-
-    grpc::ClientContext context;
-
-    // 设置 3 秒超时
-    context.set_deadline(
-      std::chrono::system_clock::now() +
-      std::chrono::seconds(3)
-    );
+    grpc::ClientContext heartbeat_context;
+    heartbeat_context.set_deadline(std::chrono::system_clock::now() + std::chrono::seconds(3));
 
     google::protobuf::Empty req;
     google::protobuf::Empty resp;
+    grpc::Status status = heartbeat_stub_->Heartbeat(&heartbeat_context, req, &resp);
 
-    grpc::Status status =
-      heartbeat_stub_->Heartbeat(&context, req, &resp);
-
-    if (status.ok()) {
-      RCLCPP_DEBUG(this->get_logger(), "Heartbeat OK");
-    } else {
-      RCLCPP_ERROR(this->get_logger(),
-        "Heartbeat failed: %s",
-        status.error_message().c_str());
+    if (!status.ok()) {
       std::exit(EXIT_FAILURE);
     }
-
-    // 每秒发送一次
-    std::this_thread::sleep_for(1s);
+    std::this_thread::sleep_for(std::chrono::seconds(1));
   }
 }
 

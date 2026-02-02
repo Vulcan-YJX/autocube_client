@@ -15,13 +15,13 @@
 #ifndef AUTOCUBE_CLIENT__AUTOCUBE_CLIENT_NODE_HPP_
 #define AUTOCUBE_CLIENT__AUTOCUBE_CLIENT_NODE_HPP_
 
-#include <grpcpp/grpcpp.h>
-#include <twist.grpc.pb.h>
 #include <battery.grpc.pb.h>
+#include <grpcpp/grpcpp.h>
 #include <heartbeat.grpc.pb.h>
+#include <twist.grpc.pb.h>
 
-#include <cstdlib>
 #include <chrono>
+#include <cstdlib>
 #include <memory>
 #include <string>
 
@@ -56,7 +56,6 @@ private:
 
   grpc::ClientContext twist_context_;
   grpc::ClientContext battery_context_;
-  grpc::ClientContext heartbeat_context_;
 
   std::shared_ptr<grpc::Channel> channel_ = nullptr;
   std::unique_ptr<autocube::TwistService::Stub> twist_stub_ = nullptr;

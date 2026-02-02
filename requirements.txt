@@ -1,4 +1,6 @@
 ros-humble-ros-base,autocube-config,libgrpc++-dev,protobuf-compiler-grpc,libprotobuf-dev,avahi-daemon,avahi-utils,libnss-mdns
+0.0.6
+    add battery and heartbeat.
 0.0.5
     add EXIT_FAILURE.
 0.0.4
