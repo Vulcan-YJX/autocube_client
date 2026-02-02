@@ -1,8 +1,8 @@
 /**:
   autocube_client_node:
     ros__parameters:
-      address: "192.168.30.37:5050"
+      address: "autocube.local:5050"
       cmd_vel_topic: "/autocube/cmd_vel"
-      battery_type: 0
+      battery_type: 0 # 0:use average; 1: use battery1; 2: use battery2;
       battery1_topic: "/battery1"
       battery2_topic: "/battery2"
