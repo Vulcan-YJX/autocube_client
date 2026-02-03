@@ -13,6 +13,8 @@ Group=robot
 Restart=always
 RestartSec=5s
 
+StartLimitBurst=10
+
 [Install]
 WantedBy=multi-user.target
 
