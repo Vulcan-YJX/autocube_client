@@ -34,7 +34,8 @@ def generate_launch_description():
                 config,
                 {
                     "battery1_topic": "/" + d1_namespace + "/system_status_broadcaster/battery1",
-                    "battery2_topic": "/" + d1_namespace + "/system_status_broadcaster/battery2"
+                    "battery2_topic": "/" + d1_namespace + "/system_status_broadcaster/battery2",
+                    "cmd_vel_topic": "/" + d1_namespace + "/command/cmd_twist"
                 }
             ]
         )
