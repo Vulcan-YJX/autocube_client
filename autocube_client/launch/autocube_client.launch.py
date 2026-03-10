@@ -29,14 +29,15 @@ def generate_launch_description():
             package='autocube_client',
             executable='autocube_client_node',
             name='autocube_client_node',
+            namespace=d1_namespace,
             output='screen',
             parameters=[
                 config,
-                {
-                    "battery1_topic": "/" + d1_namespace + "/system_status_broadcaster/battery1",
-                    "battery2_topic": "/" + d1_namespace + "/system_status_broadcaster/battery2",
-                    "cmd_vel_topic": "/" + d1_namespace + "/command/cmd_twist"
-                }
+                # {
+                #     "battery1_topic": "/" + d1_namespace + "/system_status_broadcaster/battery1",
+                #     "battery2_topic": "/" + d1_namespace + "/system_status_broadcaster/battery2",
+                #     "cmd_vel_topic": "/" + d1_namespace + "/user_command/cmd_twist"
+                # }
             ]
         )
     ])

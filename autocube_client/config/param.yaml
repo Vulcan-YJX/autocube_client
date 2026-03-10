@@ -2,7 +2,7 @@
   autocube_client_node:
     ros__parameters:
       address: "autocube.local:5050"
-      cmd_vel_topic: "/autocube/cmd_vel"
+      cmd_vel_topic: "command/user_command"
       battery_type: 0 # 0:use average; 1: use battery1; 2: use battery2;
-      battery1_topic: "/battery1"
-      battery2_topic: "/battery2"
+      battery1_topic: "system_status_broadcaster/battery1"
+      battery2_topic: "system_status_broadcaster/battery2"

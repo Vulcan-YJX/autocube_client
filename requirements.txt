@@ -1,4 +1,6 @@
 ros-humble-ros-base,autocube-config,libgrpc++-dev,protobuf-compiler-grpc,libprotobuf-dev,avahi-daemon,avahi-utils,libnss-mdns
+0.0.9
+    use param.
 0.0.8
     add cmd namespace.
 0.0.7
