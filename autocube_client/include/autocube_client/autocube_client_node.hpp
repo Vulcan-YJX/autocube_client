@@ -28,6 +28,7 @@
 #include "geometry_msgs/msg/twist_stamped.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "sensor_msgs/msg/battery_state.hpp"
+#include "geometry_msgs/msg/twist.hpp"
 
 class AutocubeClientNode : public rclcpp::Node
 {
@@ -45,12 +46,15 @@ private:
 
   void battery2_callback(const sensor_msgs::msg::BatteryState::SharedPtr msg);
 
+  void twist_callback(const geometry_msgs::msg::Twist::SharedPtr msg);
+
   void timer_callback();
 
   rclcpp::TimerBase::SharedPtr timer_;
 
   rclcpp::Subscription<sensor_msgs::msg::BatteryState>::SharedPtr battery1_sub_;
   rclcpp::Subscription<sensor_msgs::msg::BatteryState>::SharedPtr battery2_sub_;
+  rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr twist_sub_;  
 
   rclcpp::Publisher<geometry_msgs::msg::TwistStamped>::SharedPtr twist_pub_;
 
@@ -76,6 +80,7 @@ private:
   std::string cmd_vel_topic_;
   std::string battery1_topic_;
   std::string battery2_topic_;
+  std::string twist_topic_;
 
   // Thread
   std::thread heartbeat_thread_;

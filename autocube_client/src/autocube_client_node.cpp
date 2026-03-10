@@ -22,6 +22,7 @@ AutocubeClientNode::AutocubeClientNode(const rclcpp::NodeOptions & options)
   this->get_parameter("battery_type", battery_type_);
   this->get_parameter("battery1_topic", battery1_topic_);
   this->get_parameter("battery2_topic", battery2_topic_);
+  this->get_parameter("twist_topic", twist_topic_);
 
   battery1_sub_ = this->create_subscription<sensor_msgs::msg::BatteryState>(
     battery1_topic_, 10,
@@ -30,6 +31,10 @@ AutocubeClientNode::AutocubeClientNode(const rclcpp::NodeOptions & options)
   battery2_sub_ = this->create_subscription<sensor_msgs::msg::BatteryState>(
     battery2_topic_, 10,
     std::bind(&AutocubeClientNode::battery2_callback, this, std::placeholders::_1));
+
+  twist_sub_ = this->create_subscription<geometry_msgs::msg::Twist>(
+    twist_topic_, 10,
+    std::bind(&AutocubeClientNode::twist_callback, this, std::placeholders::_1));
 
   twist_pub_ = this->create_publisher<geometry_msgs::msg::TwistStamped>(cmd_vel_topic_, 10);
 
@@ -67,6 +72,18 @@ void AutocubeClientNode::battery1_callback(const sensor_msgs::msg::BatteryState:
 void AutocubeClientNode::battery2_callback(const sensor_msgs::msg::BatteryState::SharedPtr msg)
 {
   battery2_percent = msg->percentage;
+}
+
+void AutocubeClientNode::twist_callback(const geometry_msgs::msg::Twist::SharedPtr msg)
+{
+  autocube::TwistMessage twist_msg;
+  twist_msg.set_linear_x(msg->linear.x);
+  twist_msg.set_linear_y(msg->linear.y);
+  twist_msg.set_linear_z(msg->linear.z);
+  twist_msg.set_angular_x(msg->angular.x);
+  twist_msg.set_angular_y(msg->angular.y);
+  twist_msg.set_angular_z(msg->angular.z);
+  twist_stream_->Write(twist_msg);
 }
 
 void AutocubeClientNode::reader_twist_loop()
@@ -123,19 +140,15 @@ void AutocubeClientNode::timer_callback()
 AutocubeClientNode::~AutocubeClientNode()
 {
   running_ = false;
-
   if (twist_stream_) {
     twist_stream_->WritesDone();
   }
-
   if (reader_thread_.joinable()) {
     reader_thread_.join();
   }
-
   if (heartbeat_thread_.joinable()) {
     heartbeat_thread_.join();
   }
-
   auto status = twist_stream_->Finish();
   if (!status.ok()) {
     RCLCPP_ERROR(this->get_logger(), "gRPC finish error: %s", status.error_message().c_str());
