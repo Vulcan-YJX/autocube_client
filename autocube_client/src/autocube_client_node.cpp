@@ -18,7 +18,7 @@ AutocubeClientNode::AutocubeClientNode(const rclcpp::NodeOptions & options)
 : Node("autocube_client_node", options), running_(true)
 {
   this->get_parameter("address", address_);
-  this->get_parameter("cmd_vel_topic", cmd_vel_topic_);
+  this->get_parameter("user_cmd_topic", user_cmd_topic_);
   this->get_parameter("battery_type", battery_type_);
   this->get_parameter("battery1_topic", battery1_topic_);
   this->get_parameter("battery2_topic", battery2_topic_);
@@ -36,7 +36,7 @@ AutocubeClientNode::AutocubeClientNode(const rclcpp::NodeOptions & options)
     twist_topic_, 10,
     std::bind(&AutocubeClientNode::twist_callback, this, std::placeholders::_1));
 
-  twist_pub_ = this->create_publisher<geometry_msgs::msg::TwistStamped>(cmd_vel_topic_, 10);
+  user_cmd_pub_ = this->create_publisher<autocube_client::msg::UserCommand>(user_cmd_topic_, 10);
 
   channel_ = grpc::CreateChannel(address_, grpc::InsecureChannelCredentials());
   twist_stub_ = autocube::TwistService::NewStub(channel_);
@@ -92,7 +92,7 @@ void AutocubeClientNode::reader_twist_loop()
 
   while (running_) {
     if (twist_stream_->Read(&msg)) {
-      geometry_msgs::msg::TwistStamped ros_msg;
+      autocube_client::msg::UserCommand ros_msg;
       ros_msg.header.stamp = this->get_clock()->now();
       ros_msg.header.frame_id = "base_link";
 
@@ -103,7 +103,7 @@ void AutocubeClientNode::reader_twist_loop()
       ros_msg.twist.angular.y = msg.angular_y();
       ros_msg.twist.angular.z = msg.angular_z();
 
-      twist_pub_->publish(ros_msg);
+      user_cmd_pub_->publish(ros_msg);
     }
   }
   RCLCPP_WARN(this->get_logger(), "Reader twist thread exited");

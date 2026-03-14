@@ -29,6 +29,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "sensor_msgs/msg/battery_state.hpp"
 #include "geometry_msgs/msg/twist.hpp"
+#include "autocube_client/msg/user_command.hpp"
 
 class AutocubeClientNode : public rclcpp::Node
 {
@@ -56,7 +57,7 @@ private:
   rclcpp::Subscription<sensor_msgs::msg::BatteryState>::SharedPtr battery2_sub_;
   rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr twist_sub_;  
 
-  rclcpp::Publisher<geometry_msgs::msg::TwistStamped>::SharedPtr twist_pub_;
+  rclcpp::Publisher<autocube_client::msg::UserCommand>::SharedPtr user_cmd_pub_;
 
   grpc::ClientContext twist_context_;
   grpc::ClientContext battery_context_;
@@ -77,10 +78,10 @@ private:
 
   int battery_type_ = 0;
   std::string address_;
-  std::string cmd_vel_topic_;
+  std::string twist_topic_;
   std::string battery1_topic_;
   std::string battery2_topic_;
-  std::string twist_topic_;
+  std::string user_cmd_topic_;
 
   // Thread
   std::thread heartbeat_thread_;
