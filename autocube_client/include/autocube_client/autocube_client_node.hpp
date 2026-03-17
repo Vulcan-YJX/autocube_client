@@ -19,6 +19,7 @@
 #include <grpcpp/grpcpp.h>
 #include <heartbeat.grpc.pb.h>
 #include <twist.grpc.pb.h>
+#include <json.grpc.pb.h>
 
 #include <chrono>
 #include <cstdlib>
@@ -29,6 +30,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "sensor_msgs/msg/battery_state.hpp"
 #include "geometry_msgs/msg/twist.hpp"
+#include "std_msgs/msg/string.hpp"
 #include "autocube_client/msg/user_command.hpp"
 
 class AutocubeClientNode : public rclcpp::Node
@@ -43,11 +45,15 @@ private:
 
   void heartbeat_loop();
 
+  void json_cmd_loop();
+
   void battery1_callback(const sensor_msgs::msg::BatteryState::SharedPtr msg);
 
   void battery2_callback(const sensor_msgs::msg::BatteryState::SharedPtr msg);
 
   void twist_callback(const geometry_msgs::msg::Twist::SharedPtr msg);
+
+  void json_callback(const std_msgs::msg::String::SharedPtr msg);
 
   void timer_callback();
 
@@ -55,12 +61,15 @@ private:
 
   rclcpp::Subscription<sensor_msgs::msg::BatteryState>::SharedPtr battery1_sub_;
   rclcpp::Subscription<sensor_msgs::msg::BatteryState>::SharedPtr battery2_sub_;
-  rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr twist_sub_;  
+  rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr twist_sub_;
+  rclcpp::Subscription<std_msgs::msg::String>::SharedPtr json_sub_;
 
   rclcpp::Publisher<autocube_client::msg::UserCommand>::SharedPtr user_cmd_pub_;
+  rclcpp::Publisher<std_msgs::msg::String>::SharedPtr json_cmd_pub_;
 
   grpc::ClientContext twist_context_;
   grpc::ClientContext battery_context_;
+  grpc::ClientContext json_context_;
 
   std::shared_ptr<grpc::Channel> channel_ = nullptr;
   std::unique_ptr<autocube::TwistService::Stub> twist_stub_ = nullptr;
@@ -70,7 +79,11 @@ private:
   std::unique_ptr<autocube::BatteryService::Stub> battery_stub_ = nullptr;
   std::shared_ptr<grpc::ClientReaderWriter<autocube::BatteryMessage, autocube::BatteryMessage>>
     battery_stream_ = nullptr;
-
+  
+  std::unique_ptr<autocube::JsonService::Stub> json_stub_ = nullptr;
+  std::shared_ptr<grpc::ClientReaderWriter<autocube::JsonMessage, autocube::JsonMessage>>
+    json_stream_ = nullptr;
+  
   std::unique_ptr<autocube::HeartbeatService::Stub> heartbeat_stub_ = nullptr;
 
   double battery1_percent = 0;
@@ -82,10 +95,13 @@ private:
   std::string battery1_topic_;
   std::string battery2_topic_;
   std::string user_cmd_topic_;
+  std::string json_topic_;
+  std::string autocube_json_topic_;
 
   // Thread
   std::thread heartbeat_thread_;
   std::thread reader_thread_;
+  std::thread json_thread_;
   std::atomic<bool> running_;
 };
 

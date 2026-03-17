@@ -23,6 +23,8 @@ AutocubeClientNode::AutocubeClientNode(const rclcpp::NodeOptions & options)
   this->get_parameter("battery1_topic", battery1_topic_);
   this->get_parameter("battery2_topic", battery2_topic_);
   this->get_parameter("twist_topic", twist_topic_);
+  this->get_parameter("json_topic", json_topic_);
+  this->get_parameter("autocube_json_topic", autocube_json_topic_);
 
   battery1_sub_ = this->create_subscription<sensor_msgs::msg::BatteryState>(
     battery1_topic_, 10,
@@ -36,12 +38,18 @@ AutocubeClientNode::AutocubeClientNode(const rclcpp::NodeOptions & options)
     twist_topic_, 10,
     std::bind(&AutocubeClientNode::twist_callback, this, std::placeholders::_1));
 
+  json_sub_ = this->create_subscription<std_msgs::msg::String>(
+    json_topic_, 10,
+    std::bind(&AutocubeClientNode::json_callback, this, std::placeholders::_1));
+
   user_cmd_pub_ = this->create_publisher<autocube_client::msg::UserCommand>(user_cmd_topic_, 10);
+  json_cmd_pub_ = this->create_publisher<std_msgs::msg::String>(autocube_json_topic_, 10);
 
   channel_ = grpc::CreateChannel(address_, grpc::InsecureChannelCredentials());
   twist_stub_ = autocube::TwistService::NewStub(channel_);
   battery_stub_ = autocube::BatteryService::NewStub(channel_);
   heartbeat_stub_ = autocube::HeartbeatService::NewStub(channel_);
+  json_stub_ = autocube::JsonService::NewStub(channel_);
 
   twist_stream_ = twist_stub_->TwistStream(&twist_context_);
   if (!twist_stream_) {
@@ -55,8 +63,15 @@ AutocubeClientNode::AutocubeClientNode(const rclcpp::NodeOptions & options)
     return;
   }
 
+  json_stream_ = json_stub_->JsonStream(&json_context_);
+  if (!json_stream_) {
+    RCLCPP_ERROR(this->get_logger(), "Failed to create battery stream");
+    return;
+  }
+
   reader_thread_ = std::thread(&AutocubeClientNode::reader_twist_loop, this);
   heartbeat_thread_ = std::thread(&AutocubeClientNode::heartbeat_loop, this);
+  json_thread_ = std::thread(&AutocubeClientNode::json_cmd_loop, this);
 
   RCLCPP_INFO(this->get_logger(), "gRPC Server listening on: '%s'", address_.c_str());
 
@@ -72,6 +87,13 @@ void AutocubeClientNode::battery1_callback(const sensor_msgs::msg::BatteryState:
 void AutocubeClientNode::battery2_callback(const sensor_msgs::msg::BatteryState::SharedPtr msg)
 {
   battery2_percent = msg->percentage;
+}
+
+void AutocubeClientNode::json_callback(const std_msgs::msg::String::SharedPtr msg)
+{
+  autocube::JsonMessage json_msg;
+  json_msg.set_json_data(msg->data);
+  json_stream_->Write(json_msg);
 }
 
 void AutocubeClientNode::twist_callback(const geometry_msgs::msg::Twist::SharedPtr msg)
@@ -104,6 +126,20 @@ void AutocubeClientNode::reader_twist_loop()
       ros_msg.twist.angular.z = msg.angular_z();
 
       user_cmd_pub_->publish(ros_msg);
+    }
+  }
+  RCLCPP_WARN(this->get_logger(), "Reader twist thread exited");
+}
+
+void AutocubeClientNode::json_cmd_loop()
+{
+  autocube::JsonMessage msg;
+
+  while (running_) {
+    if (json_stream_->Read(&msg)) {
+      std_msgs::msg::String ros_msg;
+      ros_msg.data = msg.json_data();
+      json_cmd_pub_->publish(ros_msg);
     }
   }
   RCLCPP_WARN(this->get_logger(), "Reader twist thread exited");
