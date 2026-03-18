@@ -14,12 +14,6 @@ find_package(Protobuf REQUIRED)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(GRPC REQUIRED grpc++)
 
-rosidl_generate_interfaces(${PROJECT_NAME}
-  "msg/UserCommand.msg"
-  DEPENDENCIES std_msgs geometry_msgs
-)
-ament_export_dependencies(rosidl_default_runtime)
-
 include_directories(
   ${GRPC_INCLUDE_DIRS}
   ${Protobuf_INCLUDE_DIRS}
@@ -66,10 +60,7 @@ include_directories(
 ament_auto_add_library(${PROJECT_NAME}_lib SHARED
   src/autocube_client_node.cpp
   ${GENERATED_SRCS}      # ✅ 生成的 proto/grpc 文件
-)
-rosidl_target_interfaces(${PROJECT_NAME}_lib
-  ${PROJECT_NAME} "rosidl_typesupport_cpp")
-  
+)  
 ament_auto_add_executable(${PROJECT_NAME}_node
   src/main.cpp
   ${GENERATED_SRCS}      # 如果需要

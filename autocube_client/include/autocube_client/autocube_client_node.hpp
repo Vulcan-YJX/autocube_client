@@ -31,7 +31,7 @@
 #include "sensor_msgs/msg/battery_state.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 #include "std_msgs/msg/string.hpp"
-#include "autocube_client/msg/user_command.hpp"
+#include "ddt_msgs/msg/user_command.hpp"
 
 class AutocubeClientNode : public rclcpp::Node
 {
@@ -64,7 +64,7 @@ private:
   rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr twist_sub_;
   rclcpp::Subscription<std_msgs::msg::String>::SharedPtr json_sub_;
 
-  rclcpp::Publisher<autocube_client::msg::UserCommand>::SharedPtr user_cmd_pub_;
+  rclcpp::Publisher<ddt_msgs::msg::UserCommand>::SharedPtr user_cmd_pub_;
   rclcpp::Publisher<std_msgs::msg::String>::SharedPtr json_cmd_pub_;
 
   grpc::ClientContext twist_context_;

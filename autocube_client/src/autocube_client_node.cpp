@@ -42,7 +42,7 @@ AutocubeClientNode::AutocubeClientNode(const rclcpp::NodeOptions & options)
     json_topic_, 10,
     std::bind(&AutocubeClientNode::json_callback, this, std::placeholders::_1));
 
-  user_cmd_pub_ = this->create_publisher<autocube_client::msg::UserCommand>(user_cmd_topic_, 10);
+  user_cmd_pub_ = this->create_publisher<ddt_msgs::msg::UserCommand>(user_cmd_topic_, 10);
   json_cmd_pub_ = this->create_publisher<std_msgs::msg::String>(autocube_json_topic_, 10);
 
   channel_ = grpc::CreateChannel(address_, grpc::InsecureChannelCredentials());
@@ -114,7 +114,7 @@ void AutocubeClientNode::reader_twist_loop()
 
   while (running_) {
     if (twist_stream_->Read(&msg)) {
-      autocube_client::msg::UserCommand ros_msg;
+      ddt_msgs::msg::UserCommand ros_msg;
       ros_msg.header.stamp = this->get_clock()->now();
       ros_msg.header.frame_id = "base_link";
 
