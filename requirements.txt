@@ -1,4 +1,6 @@
 ros-humble-ros-base,autocube-config,libgrpc++-dev,protobuf-compiler-grpc,libprotobuf-dev,avahi-daemon,avahi-utils,libnss-mdns
+0.0.14
+    add json cmd.
 0.0.13
     change ddt_msgs
 0.0.12

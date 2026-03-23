@@ -137,9 +137,24 @@ void AutocubeClientNode::json_cmd_loop()
 
   while (running_) {
     if (json_stream_->Read(&msg)) {
-      std_msgs::msg::String ros_msg;
-      ros_msg.data = msg.json_data();
-      json_cmd_pub_->publish(ros_msg);
+      try {
+        std::string json_str = msg.json_data();
+        nlohmann::json json_data = nlohmann::json::parse(json_str);
+        if (json_data.contains("type")) {
+          if(json_data["type"] == "robot"){
+            ddt_msgs::msg::UserCommand cmd_msg;
+            cmd_msg.header.stamp = this->get_clock()->now();
+            cmd_msg.header.frame_id = "base_link";
+            cmd_msg.fsm_mode = json_data["cmd"].get<std::string>();
+            user_cmd_pub_->publish(cmd_msg);
+          }
+        }
+        std_msgs::msg::String ros_msg;
+        ros_msg.data = msg.json_data();
+        json_cmd_pub_->publish(ros_msg);
+      } catch (nlohmann::json::parse_error& e) {
+          std::cout << "JSON解析失败: " << e.what() << std::endl;
+      }
     }
   }
   RCLCPP_WARN(this->get_logger(), "Reader twist thread exited");

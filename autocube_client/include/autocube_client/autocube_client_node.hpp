@@ -32,6 +32,7 @@
 #include "geometry_msgs/msg/twist.hpp"
 #include "std_msgs/msg/string.hpp"
 #include "ddt_msgs/msg/user_command.hpp"
+#include "nlohmann/json.hpp"
 
 class AutocubeClientNode : public rclcpp::Node
 {
