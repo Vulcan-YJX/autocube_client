@@ -142,11 +142,14 @@ void AutocubeClientNode::json_cmd_loop()
         nlohmann::json json_data = nlohmann::json::parse(json_str);
         if (json_data.contains("type")) {
           if(json_data["type"] == "robot"){
-            ddt_msgs::msg::UserCommand cmd_msg;
-            cmd_msg.header.stamp = this->get_clock()->now();
-            cmd_msg.header.frame_id = "base_link";
-            cmd_msg.fsm_mode = json_data["cmd"].get<std::string>();
-            user_cmd_pub_->publish(cmd_msg);
+            if (json_data.contains("msg")) {
+              nlohmann::json json_msg = json_data["msg"];
+              ddt_msgs::msg::UserCommand cmd_msg;
+              cmd_msg.header.stamp = this->get_clock()->now();
+              cmd_msg.header.frame_id = "base_link";
+              cmd_msg.fsm_mode = json_msg["cmd"].get<std::string>();
+              user_cmd_pub_->publish(cmd_msg);
+            }
           }
         }
         std_msgs::msg::String ros_msg;
