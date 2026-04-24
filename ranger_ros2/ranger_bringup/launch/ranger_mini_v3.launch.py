@@ -8,8 +8,8 @@ from launch.actions import DeclareLaunchArgument, ExecuteProcess
 from launch.substitutions import LaunchConfiguration, Command
 from launch_ros.actions import Node
 
-import subprocess
-result = subprocess.run(["bash", "/opt/autocube/bringup_can2usb.bash"], capture_output=True, text=True)
+# import subprocess
+# result = subprocess.run(["bash", "/opt/autocube/bringup_can2usb.bash"], capture_output=True, text=True)
 
 def generate_launch_description():
     use_sim_time_arg = DeclareLaunchArgument('use_sim_time', default_value='false',
@@ -36,7 +36,7 @@ def generate_launch_description():
         package='ranger_base',
         executable='ranger_base_node',
         output='screen',
-        emulate_tty=True,
+        # emulate_tty=True,
         parameters=[{
                 'use_sim_time': launch.substitutions.LaunchConfiguration('use_sim_time'),
                 'port_name': launch.substitutions.LaunchConfiguration('port_name'),
