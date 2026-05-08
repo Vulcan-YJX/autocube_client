@@ -19,11 +19,11 @@
 
 int main(int argc, char * argv[])
 {
-  #ifdef _WIN32
-    _putenv("GRPC_DNS_RESOLVER=native");  // Windows
-  #else
-      setenv("GRPC_DNS_RESOLVER", "native", 1); // Linux/macOS
-  #endif
+#ifdef _WIN32
+  _putenv("GRPC_DNS_RESOLVER=native");  // Windows
+#else
+  setenv("GRPC_DNS_RESOLVER", "native", 1);  // Linux/macOS
+#endif
   rclcpp::init(argc, argv);
 
   auto options = rclcpp::NodeOptions().automatically_declare_parameters_from_overrides(true);

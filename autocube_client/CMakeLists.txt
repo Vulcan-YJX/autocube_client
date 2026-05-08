@@ -60,8 +60,7 @@ include_directories(
 ament_auto_add_library(${PROJECT_NAME}_lib SHARED
   src/autocube_client_node.cpp
   ${GENERATED_SRCS}      # ✅ 生成的 proto/grpc 文件
-)
-
+)  
 ament_auto_add_executable(${PROJECT_NAME}_node
   src/main.cpp
   ${GENERATED_SRCS}      # 如果需要

@@ -2,4 +2,9 @@
   autocube_client_node:
     ros__parameters:
       address: "autocube.local:5050"
-      cmd_vel_topic: "/autocube/cmd_vel"
+      # address: "127.0.0.1:5050"
+      user_cmd_topic: "/cmd_vel"
+      battery1_topic: "/battery"
+      odom_topic: "/odom"
+      json_topic: "autocube/client_json"
+      autocube_json_topic: "autocube/cmd_json"

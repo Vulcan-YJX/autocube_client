@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package autocube;
+
+service JsonService {
+  rpc JsonStream(stream JsonMessage) returns (stream JsonMessage);
+}
+
+message JsonMessage {
+  string json_data = 1;
+}
+

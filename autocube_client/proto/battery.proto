@@ -13,4 +13,5 @@ message BatteryMessage {
   double battery_one = 1;
   double battery_two = 2;
   double average = 3;
+  int32 type = 4;
 }

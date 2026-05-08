@@ -15,15 +15,23 @@
 #ifndef AUTOCUBE_CLIENT__AUTOCUBE_CLIENT_NODE_HPP_
 #define AUTOCUBE_CLIENT__AUTOCUBE_CLIENT_NODE_HPP_
 
+#include <battery.grpc.pb.h>
 #include <grpcpp/grpcpp.h>
+#include <heartbeat.grpc.pb.h>
 #include <twist.grpc.pb.h>
+#include <json.grpc.pb.h>
 
 #include <chrono>
+#include <cstdlib>
 #include <memory>
 #include <string>
 
 #include "geometry_msgs/msg/twist.hpp"
 #include "rclcpp/rclcpp.hpp"
+#include "sensor_msgs/msg/battery_state.hpp"
+#include "nav_msgs/msg/odometry.hpp"
+#include "std_msgs/msg/string.hpp"
+#include "nlohmann/json.hpp"
 
 class AutocubeClientNode : public rclcpp::Node
 {
@@ -35,19 +43,60 @@ public:
 private:
   void reader_twist_loop();
 
-  rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr twist_pub_;
+  void heartbeat_loop();
+
+  void json_cmd_loop();
+
+  void battery1_callback(const sensor_msgs::msg::BatteryState::SharedPtr msg);
+  
+  void odom_callback(const nav_msgs::msg::Odometry::SharedPtr msg);
+
+  void json_callback(const std_msgs::msg::String::SharedPtr msg);
+
+  void timer_callback();
+
+  rclcpp::TimerBase::SharedPtr timer_;
+
+  rclcpp::Subscription<sensor_msgs::msg::BatteryState>::SharedPtr battery1_sub_;
+  rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
+  rclcpp::Subscription<std_msgs::msg::String>::SharedPtr json_sub_;
+
+  rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr user_cmd_pub_;
+  rclcpp::Publisher<std_msgs::msg::String>::SharedPtr json_cmd_pub_;
+
+  grpc::ClientContext twist_context_;
+  grpc::ClientContext battery_context_;
+  grpc::ClientContext json_context_;
 
   std::shared_ptr<grpc::Channel> channel_ = nullptr;
-  std::unique_ptr<autocube::TwistService::Stub> stub_ = nullptr;
-  grpc::ClientContext twist_context_;
+  std::unique_ptr<autocube::TwistService::Stub> twist_stub_ = nullptr;
   std::shared_ptr<grpc::ClientReaderWriter<autocube::TwistMessage, autocube::TwistMessage>>
     twist_stream_ = nullptr;
 
+  std::unique_ptr<autocube::BatteryService::Stub> battery_stub_ = nullptr;
+  std::shared_ptr<grpc::ClientReaderWriter<autocube::BatteryMessage, autocube::BatteryMessage>>
+    battery_stream_ = nullptr;
+  
+  std::unique_ptr<autocube::JsonService::Stub> json_stub_ = nullptr;
+  std::shared_ptr<grpc::ClientReaderWriter<autocube::JsonMessage, autocube::JsonMessage>>
+    json_stream_ = nullptr;
+  
+  std::unique_ptr<autocube::HeartbeatService::Stub> heartbeat_stub_ = nullptr;
+
+  double battery1_percent = 0;
+
+  int battery_type_ = 0;
   std::string address_;
-  std::string cmd_vel_topic_;
+  std::string odom_topic_;
+  std::string battery1_topic_;
+  std::string user_cmd_topic_;
+  std::string json_topic_;
+  std::string autocube_json_topic_;
 
   // Thread
+  std::thread heartbeat_thread_;
   std::thread reader_thread_;
+  std::thread json_thread_;
   std::atomic<bool> running_;
 };
 
