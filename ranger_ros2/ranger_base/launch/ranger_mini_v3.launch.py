@@ -30,6 +30,12 @@ def generate_launch_description():
                                                  description='Simulation control loop update rate')
     robot_model_arg = DeclareLaunchArgument('robot_model', default_value='ranger_mini_v3',
                                            description='robot motion model')
+
+    can_up_cmd = ExecuteProcess(
+        cmd=['sudo', 'ip', 'link', 'set', 'can0', 'up', 'type', 'can', 'bitrate', '500000'],
+        output='screen'
+    )
+
     ranger_base_node = launch_ros.actions.Node(
         package='ranger_base',
         executable='ranger_base_node',
@@ -48,7 +54,7 @@ def generate_launch_description():
 
     return LaunchDescription([
         use_sim_time_arg,
-        port_name_arg,        
+        port_name_arg,
         odom_frame_arg,
         base_link_frame_arg,
         odom_topic_arg,
@@ -56,5 +62,6 @@ def generate_launch_description():
         publish_odom_tf_arg,
         update_rate_arg,
         robot_model_arg,
+        can_up_cmd,
         ranger_base_node
     ])
