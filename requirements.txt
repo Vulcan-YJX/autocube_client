@@ -1,4 +1,4 @@
-ros-humble-ros-base,autocube-config,libgrpc++-dev,protobuf-compiler-grpc,libprotobuf-dev,avahi-daemon,avahi-utils,libnss-mdns,libasio-dev
+ros-humble-ros-base,autocube-config,libgrpc++-dev,protobuf-compiler-grpc,libprotobuf-dev,avahi-daemon,avahi-utils,libnss-mdns,libasio-dev,build-essential,cmake,g++
 0.0.2
     add grpc native dns.
 0.0.1
