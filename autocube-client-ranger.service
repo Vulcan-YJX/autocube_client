@@ -7,7 +7,7 @@ PartOf=autocube-config.service
 [Service]
 EnvironmentFile=/opt/autocube/autocube_env.conf
 WorkingDirectory=/opt/autocube
-ExecStart=/usr/bin/bash -c "source /opt/ros/humble/setup.bash && source /opt/autocube/autocube-client/setup.bash && ros2 launch autocube_client autocube_client.launch.py"
+ExecStart=/usr/bin/bash -c "source /opt/ros/humble/setup.bash && source /opt/autocube/autocube-client-ranger/setup.bash && ros2 launch autocube_client autocube_client.launch.py"
 User=root
 Group=root
 Restart=always
