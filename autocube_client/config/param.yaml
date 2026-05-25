@@ -8,5 +8,6 @@
       battery1_topic: "system_status_broadcaster/battery1"
       battery2_topic: "system_status_broadcaster/battery2"
       twist_topic: "twist"
+      twist_type: "Twist" # Twist, TwistStamped, TwistWithCovariance, TwistWithCovarianceStamped, Odom
       json_topic: "autocube/client_json"
       autocube_json_topic: "autocube/cmd_json"

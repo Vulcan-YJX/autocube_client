@@ -23,6 +23,7 @@ AutocubeClientNode::AutocubeClientNode(const rclcpp::NodeOptions & options)
   this->get_parameter("battery1_topic", battery1_topic_);
   this->get_parameter("battery2_topic", battery2_topic_);
   this->get_parameter("twist_topic", twist_topic_);
+  this->get_parameter("twist_type", twist_type_);
   this->get_parameter("json_topic", json_topic_);
   this->get_parameter("autocube_json_topic", autocube_json_topic_);
 
@@ -34,9 +35,32 @@ AutocubeClientNode::AutocubeClientNode(const rclcpp::NodeOptions & options)
     battery2_topic_, 10,
     std::bind(&AutocubeClientNode::battery2_callback, this, std::placeholders::_1));
 
-  twist_sub_ = this->create_subscription<geometry_msgs::msg::Twist>(
-    twist_topic_, 10,
-    std::bind(&AutocubeClientNode::twist_callback, this, std::placeholders::_1));
+  if (twist_type_ == "TwistStamped") {
+    twist_stamped_sub_ = this->create_subscription<geometry_msgs::msg::TwistStamped>(
+      twist_topic_, 10,
+      std::bind(&AutocubeClientNode::twist_stamped_callback, this, std::placeholders::_1));
+  } else if (twist_type_ == "TwistWithCovariance") {
+    twist_with_covariance_sub_ =
+      this->create_subscription<geometry_msgs::msg::TwistWithCovariance>(
+      twist_topic_, 10,
+      std::bind(
+        &AutocubeClientNode::twist_with_covariance_callback, this, std::placeholders::_1));
+  } else if (twist_type_ == "TwistWithCovarianceStamped") {
+    twist_with_covariance_stamped_sub_ =
+      this->create_subscription<geometry_msgs::msg::TwistWithCovarianceStamped>(
+      twist_topic_, 10,
+      std::bind(
+        &AutocubeClientNode::twist_with_covariance_stamped_callback, this,
+        std::placeholders::_1));
+  } else if (twist_type_ == "Odom") {
+    odom_sub_ = this->create_subscription<nav_msgs::msg::Odometry>(
+      twist_topic_, 10,
+      std::bind(&AutocubeClientNode::odom_callback, this, std::placeholders::_1));
+  } else {
+    twist_sub_ = this->create_subscription<geometry_msgs::msg::Twist>(
+      twist_topic_, 10,
+      std::bind(&AutocubeClientNode::twist_callback, this, std::placeholders::_1));
+  }
 
   json_sub_ = this->create_subscription<std_msgs::msg::String>(
     json_topic_, 10,
@@ -98,13 +122,41 @@ void AutocubeClientNode::json_callback(const std_msgs::msg::String::SharedPtr ms
 
 void AutocubeClientNode::twist_callback(const geometry_msgs::msg::Twist::SharedPtr msg)
 {
+  send_twist(*msg);
+}
+
+void AutocubeClientNode::twist_stamped_callback(
+  const geometry_msgs::msg::TwistStamped::SharedPtr msg)
+{
+  send_twist(msg->twist);
+}
+
+void AutocubeClientNode::twist_with_covariance_callback(
+  const geometry_msgs::msg::TwistWithCovariance::SharedPtr msg)
+{
+  send_twist(msg->twist);
+}
+
+void AutocubeClientNode::twist_with_covariance_stamped_callback(
+  const geometry_msgs::msg::TwistWithCovarianceStamped::SharedPtr msg)
+{
+  send_twist(msg->twist.twist);
+}
+
+void AutocubeClientNode::odom_callback(const nav_msgs::msg::Odometry::SharedPtr msg)
+{
+  send_twist(msg->twist.twist);
+}
+
+void AutocubeClientNode::send_twist(const geometry_msgs::msg::Twist & twist)
+{
   autocube::TwistMessage twist_msg;
-  twist_msg.set_linear_x(msg->linear.x);
-  twist_msg.set_linear_y(msg->linear.y);
-  twist_msg.set_linear_z(msg->linear.z);
-  twist_msg.set_angular_x(msg->angular.x);
-  twist_msg.set_angular_y(msg->angular.y);
-  twist_msg.set_angular_z(msg->angular.z);
+  twist_msg.set_linear_x(twist.linear.x);
+  twist_msg.set_linear_y(twist.linear.y);
+  twist_msg.set_linear_z(twist.linear.z);
+  twist_msg.set_angular_x(twist.angular.x);
+  twist_msg.set_angular_y(twist.angular.y);
+  twist_msg.set_angular_z(twist.angular.z);
   twist_stream_->Write(twist_msg);
 }
 

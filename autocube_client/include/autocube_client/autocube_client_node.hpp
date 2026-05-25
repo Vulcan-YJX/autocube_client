@@ -27,6 +27,9 @@
 #include <string>
 
 #include "geometry_msgs/msg/twist_stamped.hpp"
+#include "geometry_msgs/msg/twist_with_covariance.hpp"
+#include "geometry_msgs/msg/twist_with_covariance_stamped.hpp"
+#include "nav_msgs/msg/odometry.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "sensor_msgs/msg/battery_state.hpp"
 #include "geometry_msgs/msg/twist.hpp"
@@ -54,6 +57,18 @@ private:
 
   void twist_callback(const geometry_msgs::msg::Twist::SharedPtr msg);
 
+  void twist_stamped_callback(const geometry_msgs::msg::TwistStamped::SharedPtr msg);
+
+  void twist_with_covariance_callback(
+    const geometry_msgs::msg::TwistWithCovariance::SharedPtr msg);
+
+  void twist_with_covariance_stamped_callback(
+    const geometry_msgs::msg::TwistWithCovarianceStamped::SharedPtr msg);
+
+  void odom_callback(const nav_msgs::msg::Odometry::SharedPtr msg);
+
+  void send_twist(const geometry_msgs::msg::Twist & twist);
+
   void json_callback(const std_msgs::msg::String::SharedPtr msg);
 
   void timer_callback();
@@ -63,6 +78,12 @@ private:
   rclcpp::Subscription<sensor_msgs::msg::BatteryState>::SharedPtr battery1_sub_;
   rclcpp::Subscription<sensor_msgs::msg::BatteryState>::SharedPtr battery2_sub_;
   rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr twist_sub_;
+  rclcpp::Subscription<geometry_msgs::msg::TwistStamped>::SharedPtr twist_stamped_sub_;
+  rclcpp::Subscription<geometry_msgs::msg::TwistWithCovariance>::SharedPtr
+    twist_with_covariance_sub_;
+  rclcpp::Subscription<geometry_msgs::msg::TwistWithCovarianceStamped>::SharedPtr
+    twist_with_covariance_stamped_sub_;
+  rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
   rclcpp::Subscription<std_msgs::msg::String>::SharedPtr json_sub_;
 
   rclcpp::Publisher<ddt_msgs::msg::UserCommand>::SharedPtr user_cmd_pub_;
@@ -93,6 +114,7 @@ private:
   int battery_type_ = 0;
   std::string address_;
   std::string twist_topic_;
+  std::string twist_type_;
   std::string battery1_topic_;
   std::string battery2_topic_;
   std::string user_cmd_topic_;
