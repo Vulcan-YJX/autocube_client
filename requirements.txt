@@ -1,4 +1,6 @@
 ros-humble-ros-base,autocube-config,libgrpc++-dev,protobuf-compiler-grpc,libprotobuf-dev,avahi-daemon,avahi-utils,libnss-mdns,nlohmann-json3-dev
+0.0.17
+    add robot param.
 0.0.16
     feat add twist type.
 0.0.15
