@@ -34,6 +34,7 @@
 #include "sensor_msgs/msg/battery_state.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 #include "std_msgs/msg/string.hpp"
+#include "std_srvs/srv/set_bool.hpp"
 #include "ddt_msgs/msg/user_command.hpp"
 #include "nlohmann/json.hpp"
 
@@ -88,6 +89,10 @@ private:
 
   rclcpp::Publisher<ddt_msgs::msg::UserCommand>::SharedPtr user_cmd_pub_;
   rclcpp::Publisher<std_msgs::msg::String>::SharedPtr json_cmd_pub_;
+
+  rclcpp::Client<std_srvs::srv::SetBool>::SharedPtr set_controller_status_client_;
+
+  rclcpp::AsyncParametersClient::SharedPtr teleop_param_client_;
 
   grpc::ClientContext twist_context_;
   grpc::ClientContext battery_context_;

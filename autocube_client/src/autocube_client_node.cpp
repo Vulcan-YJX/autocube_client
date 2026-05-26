@@ -69,6 +69,12 @@ AutocubeClientNode::AutocubeClientNode(const rclcpp::NodeOptions & options)
   user_cmd_pub_ = this->create_publisher<ddt_msgs::msg::UserCommand>(user_cmd_topic_, 10);
   json_cmd_pub_ = this->create_publisher<std_msgs::msg::String>(autocube_json_topic_, 10);
 
+  set_controller_status_client_ =
+    this->create_client<std_srvs::srv::SetBool>("command/set_controller_status");
+
+  teleop_param_client_ =
+    std::make_shared<rclcpp::AsyncParametersClient>(this, "teleop_command");
+
   channel_ = grpc::CreateChannel(address_, grpc::InsecureChannelCredentials());
   twist_stub_ = autocube::TwistService::NewStub(channel_);
   battery_stub_ = autocube::BatteryService::NewStub(channel_);
@@ -201,6 +207,39 @@ void AutocubeClientNode::json_cmd_loop()
               cmd_msg.header.frame_id = "base_link";
               cmd_msg.fsm_mode = json_msg["cmd"].get<std::string>();
               user_cmd_pub_->publish(cmd_msg);
+            }
+          } else if (json_data["type"] == "robot_param") {
+            if (json_data.contains("msg")) {
+              if(json_data["param"] == "quattro"){
+                auto request = std::make_shared<std_srvs::srv::SetBool::Request>();
+                request->data = json_data["value"].get<bool>();
+                if (set_controller_status_client_->service_is_ready()) {
+                  set_controller_status_client_->async_send_request(request);
+                  RCLCPP_INFO(
+                    this->get_logger(),
+                    "Sent request to command/set_controller_status with value: %s",
+                    request->data ? "true" : "false");
+                } else {
+                  RCLCPP_WARN(
+                    this->get_logger(),
+                    "Service command/set_controller_status not available");
+                }
+              } else if (json_data["param"] == "use_sdk") {
+                bool value = json_data["value"].get<bool>();
+                if (teleop_param_client_->service_is_ready()) {
+                  teleop_param_client_->set_parameters(
+                    {rclcpp::Parameter("use_sdk", value)});
+                  RCLCPP_INFO(
+                    this->get_logger(),
+                    "Set teleop_command param use_sdk: %s",
+                    value ? "true" : "false");
+                } else {
+                  RCLCPP_WARN(
+                    this->get_logger(),
+                    "Parameter service for teleop_command not available");
+                }
+              }
+
             }
           }
         }
