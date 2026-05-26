@@ -210,9 +210,10 @@ void AutocubeClientNode::json_cmd_loop()
             }
           } else if (json_data["type"] == "robot_param") {
             if (json_data.contains("msg")) {
-              if(json_data["param"] == "quattro"){
+              nlohmann::json json_msg = json_data["msg"];
+              if(json_msg["param"] == "quattro"){
                 auto request = std::make_shared<std_srvs::srv::SetBool::Request>();
-                request->data = json_data["value"].get<bool>();
+                request->data = json_msg["value"].get<bool>();
                 if (set_controller_status_client_->service_is_ready()) {
                   set_controller_status_client_->async_send_request(request);
                   RCLCPP_INFO(
@@ -224,8 +225,8 @@ void AutocubeClientNode::json_cmd_loop()
                     this->get_logger(),
                     "Service command/set_controller_status not available");
                 }
-              } else if (json_data["param"] == "use_sdk") {
-                bool value = json_data["value"].get<bool>();
+              } else if (json_msg["param"] == "use_sdk") {
+                bool value = json_msg["value"].get<bool>();
                 if (teleop_param_client_->service_is_ready()) {
                   teleop_param_client_->set_parameters(
                     {rclcpp::Parameter("use_sdk", value)});
