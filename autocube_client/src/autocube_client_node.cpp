@@ -81,6 +81,7 @@ AutocubeClientNode::AutocubeClientNode(const rclcpp::NodeOptions & options)
 
   channel_ = grpc::CreateChannel(address_, grpc::InsecureChannelCredentials());
   twist_stub_ = autocube::TwistService::NewStub(channel_);
+  odom_stub_ = autocube::OdomService::NewStub(channel_);
   battery_stub_ = autocube::BatteryService::NewStub(channel_);
   heartbeat_stub_ = autocube::HeartbeatService::NewStub(channel_);
   json_stub_ = autocube::JsonService::NewStub(channel_);
@@ -89,6 +90,14 @@ AutocubeClientNode::AutocubeClientNode(const rclcpp::NodeOptions & options)
   if (!twist_stream_) {
     RCLCPP_ERROR(this->get_logger(), "Failed to create twist stream");
     return;
+  }
+
+  if (twist_type_ == "Odom") {
+    odom_stream_ = odom_stub_->OdomStream(&odom_context_);
+    if (!odom_stream_) {
+      RCLCPP_ERROR(this->get_logger(), "Failed to create odom stream");
+      return;
+    }
   }
 
   battery_stream_ = battery_stub_->BatteryStream(&battery_context_);
@@ -155,7 +164,39 @@ void AutocubeClientNode::twist_with_covariance_stamped_callback(
 
 void AutocubeClientNode::odom_callback(const nav_msgs::msg::Odometry::SharedPtr msg)
 {
-  send_twist(msg->twist.twist);
+  if (!odom_stream_) {
+    RCLCPP_ERROR_THROTTLE(
+      this->get_logger(), *this->get_clock(), 5000, "Odom stream is not available");
+    return;
+  }
+
+  autocube::OdomMessage odom_msg;
+
+  auto * linear = odom_msg.mutable_twist()->mutable_linear();
+  linear->set_x(msg->twist.twist.linear.x);
+  linear->set_y(msg->twist.twist.linear.y);
+  linear->set_z(msg->twist.twist.linear.z);
+
+  auto * angular = odom_msg.mutable_twist()->mutable_angular();
+  angular->set_x(msg->twist.twist.angular.x);
+  angular->set_y(msg->twist.twist.angular.y);
+  angular->set_z(msg->twist.twist.angular.z);
+
+  auto * position = odom_msg.mutable_position();
+  position->set_x(msg->pose.pose.position.x);
+  position->set_y(msg->pose.pose.position.y);
+  position->set_z(msg->pose.pose.position.z);
+
+  auto * orientation = odom_msg.mutable_orientation();
+  orientation->set_x(msg->pose.pose.orientation.x);
+  orientation->set_y(msg->pose.pose.orientation.y);
+  orientation->set_z(msg->pose.pose.orientation.z);
+  orientation->set_w(msg->pose.pose.orientation.w);
+
+  if (!odom_stream_->Write(odom_msg)) {
+    RCLCPP_ERROR_THROTTLE(
+      this->get_logger(), *this->get_clock(), 5000, "Failed to write odom message");
+  }
 }
 
 void AutocubeClientNode::send_twist(const geometry_msgs::msg::Twist & twist)
@@ -293,14 +334,27 @@ AutocubeClientNode::~AutocubeClientNode()
   if (twist_stream_) {
     twist_stream_->WritesDone();
   }
+  if (odom_stream_) {
+    odom_stream_->WritesDone();
+  }
   if (reader_thread_.joinable()) {
     reader_thread_.join();
   }
   if (heartbeat_thread_.joinable()) {
     heartbeat_thread_.join();
   }
-  auto status = twist_stream_->Finish();
-  if (!status.ok()) {
-    RCLCPP_ERROR(this->get_logger(), "gRPC finish error: %s", status.error_message().c_str());
+  if (twist_stream_) {
+    auto status = twist_stream_->Finish();
+    if (!status.ok()) {
+      RCLCPP_ERROR(
+        this->get_logger(), "Twist gRPC finish error: %s", status.error_message().c_str());
+    }
+  }
+  if (odom_stream_) {
+    auto status = odom_stream_->Finish();
+    if (!status.ok()) {
+      RCLCPP_ERROR(
+        this->get_logger(), "Odom gRPC finish error: %s", status.error_message().c_str());
+    }
   }
 }

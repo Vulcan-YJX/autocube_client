@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package autocube;
+
+// Odom 双向流服务。
+service OdomService {
+  rpc OdomStream(stream OdomMessage) returns (stream OdomMessage);
+}
+
+message OdomMessage {
+  message Vector3 {
+    double x = 1;
+    double y = 2;
+    double z = 3;
+  }
+
+  message Quaternion {
+    double x = 1;
+    double y = 2;
+    double z = 3;
+    double w = 4;
+  }
+
+  message Twist {
+    Vector3 linear = 1;
+    Vector3 angular = 2;
+  }
+
+  Twist twist = 1;
+  Vector3 position = 2;
+  Quaternion orientation = 3;
+}

@@ -18,8 +18,9 @@
 #include <battery.grpc.pb.h>
 #include <grpcpp/grpcpp.h>
 #include <heartbeat.grpc.pb.h>
-#include <twist.grpc.pb.h>
 #include <json.grpc.pb.h>
+#include <odom.grpc.pb.h>
+#include <twist.grpc.pb.h>
 
 #include <chrono>
 #include <cstdlib>
@@ -95,6 +96,7 @@ private:
   rclcpp::AsyncParametersClient::SharedPtr teleop_param_client_;
 
   grpc::ClientContext twist_context_;
+  grpc::ClientContext odom_context_;
   grpc::ClientContext battery_context_;
   grpc::ClientContext json_context_;
 
@@ -102,6 +104,10 @@ private:
   std::unique_ptr<autocube::TwistService::Stub> twist_stub_ = nullptr;
   std::shared_ptr<grpc::ClientReaderWriter<autocube::TwistMessage, autocube::TwistMessage>>
     twist_stream_ = nullptr;
+
+  std::unique_ptr<autocube::OdomService::Stub> odom_stub_ = nullptr;
+  std::shared_ptr<grpc::ClientReaderWriter<autocube::OdomMessage, autocube::OdomMessage>>
+    odom_stream_ = nullptr;
 
   std::unique_ptr<autocube::BatteryService::Stub> battery_stub_ = nullptr;
   std::shared_ptr<grpc::ClientReaderWriter<autocube::BatteryMessage, autocube::BatteryMessage>>
