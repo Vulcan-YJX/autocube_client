@@ -31,10 +31,10 @@
 #include "geometry_msgs/msg/twist_with_covariance_stamped.hpp"
 #include "nav_msgs/msg/odometry.hpp"
 #include "rclcpp/rclcpp.hpp"
-#include "sensor_msgs/msg/battery_state.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 #include "std_msgs/msg/string.hpp"
 #include "std_srvs/srv/set_bool.hpp"
+#include "ddt_msgs/msg/battery_states.hpp"
 #include "ddt_msgs/msg/user_command.hpp"
 #include "nlohmann/json.hpp"
 
@@ -52,9 +52,9 @@ private:
 
   void json_cmd_loop();
 
-  void battery1_callback(const sensor_msgs::msg::BatteryState::SharedPtr msg);
+  void battery1_callback(const ddt_msgs::msg::BatteryStates::SharedPtr msg);
 
-  void battery2_callback(const sensor_msgs::msg::BatteryState::SharedPtr msg);
+  void battery2_callback(const ddt_msgs::msg::BatteryStates::SharedPtr msg);
 
   void twist_callback(const geometry_msgs::msg::Twist::SharedPtr msg);
 
@@ -76,8 +76,8 @@ private:
 
   rclcpp::TimerBase::SharedPtr timer_;
 
-  rclcpp::Subscription<sensor_msgs::msg::BatteryState>::SharedPtr battery1_sub_;
-  rclcpp::Subscription<sensor_msgs::msg::BatteryState>::SharedPtr battery2_sub_;
+  rclcpp::Subscription<ddt_msgs::msg::BatteryStates>::SharedPtr battery1_sub_;
+  rclcpp::Subscription<ddt_msgs::msg::BatteryStates>::SharedPtr battery2_sub_;
   rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr twist_sub_;
   rclcpp::Subscription<geometry_msgs::msg::TwistStamped>::SharedPtr twist_stamped_sub_;
   rclcpp::Subscription<geometry_msgs::msg::TwistWithCovariance>::SharedPtr

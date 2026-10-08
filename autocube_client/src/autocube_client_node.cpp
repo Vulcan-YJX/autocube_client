@@ -27,11 +27,11 @@ AutocubeClientNode::AutocubeClientNode(const rclcpp::NodeOptions & options)
   this->get_parameter("json_topic", json_topic_);
   this->get_parameter("autocube_json_topic", autocube_json_topic_);
 
-  battery1_sub_ = this->create_subscription<sensor_msgs::msg::BatteryState>(
+  battery1_sub_ = this->create_subscription<ddt_msgs::msg::BatteryStates>(
     battery1_topic_, 10,
     std::bind(&AutocubeClientNode::battery1_callback, this, std::placeholders::_1));
 
-  battery2_sub_ = this->create_subscription<sensor_msgs::msg::BatteryState>(
+  battery2_sub_ = this->create_subscription<ddt_msgs::msg::BatteryStates>(
     battery2_topic_, 10,
     std::bind(&AutocubeClientNode::battery2_callback, this, std::placeholders::_1));
 
@@ -109,12 +109,12 @@ AutocubeClientNode::AutocubeClientNode(const rclcpp::NodeOptions & options)
     std::chrono::milliseconds(100), std::bind(&AutocubeClientNode::timer_callback, this));
 }
 
-void AutocubeClientNode::battery1_callback(const sensor_msgs::msg::BatteryState::SharedPtr msg)
+void AutocubeClientNode::battery1_callback(const ddt_msgs::msg::BatteryStates::SharedPtr msg)
 {
   battery1_percent = msg->percentage;
 }
 
-void AutocubeClientNode::battery2_callback(const sensor_msgs::msg::BatteryState::SharedPtr msg)
+void AutocubeClientNode::battery2_callback(const ddt_msgs::msg::BatteryStates::SharedPtr msg)
 {
   battery2_percent = msg->percentage;
 }

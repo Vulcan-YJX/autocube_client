@@ -10,6 +10,7 @@ ament_auto_find_build_dependencies()
 find_package(rosidl_default_generators REQUIRED)
 
 set(MSG_FILES
+        "msg/BatteryStates.msg"
         "msg/JointControlCommand.msg"
         "msg/DockStatus.msg"
         "msg/UserCommand.msg"
