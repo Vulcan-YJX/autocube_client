@@ -71,11 +71,21 @@ private:
 
   void send_twist(const geometry_msgs::msg::Twist & twist);
 
+  void send_odom(const nav_msgs::msg::Odometry & odom);
+
+  void twist_timer_callback();
+
   void json_callback(const std_msgs::msg::String::SharedPtr msg);
 
   void timer_callback();
 
   rclcpp::TimerBase::SharedPtr timer_;
+  rclcpp::TimerBase::SharedPtr twist_timer_;
+
+  // Accessed only by subscriptions and the timer in the default mutually exclusive group.
+  geometry_msgs::msg::Twist latest_twist_;
+  bool has_twist_ = false;
+  nav_msgs::msg::Odometry::SharedPtr latest_odom_;
 
   rclcpp::Subscription<ddt_msgs::msg::BatteryStates>::SharedPtr battery1_sub_;
   rclcpp::Subscription<ddt_msgs::msg::BatteryStates>::SharedPtr battery2_sub_;

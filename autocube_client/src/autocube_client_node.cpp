@@ -118,6 +118,9 @@ AutocubeClientNode::AutocubeClientNode(const rclcpp::NodeOptions & options)
 
   RCLCPP_INFO(this->get_logger(), "gRPC Server listening on: '%s'", address_.c_str());
 
+  twist_timer_ = this->create_wall_timer(
+    std::chrono::milliseconds(10), std::bind(&AutocubeClientNode::twist_timer_callback, this));
+
   timer_ = this->create_wall_timer(
     std::chrono::milliseconds(100), std::bind(&AutocubeClientNode::timer_callback, this));
 }
@@ -141,28 +144,48 @@ void AutocubeClientNode::json_callback(const std_msgs::msg::String::SharedPtr ms
 
 void AutocubeClientNode::twist_callback(const geometry_msgs::msg::Twist::SharedPtr msg)
 {
-  send_twist(*msg);
+  latest_twist_ = *msg;
+  has_twist_ = true;
 }
 
 void AutocubeClientNode::twist_stamped_callback(
   const geometry_msgs::msg::TwistStamped::SharedPtr msg)
 {
-  send_twist(msg->twist);
+  latest_twist_ = msg->twist;
+  has_twist_ = true;
 }
 
 void AutocubeClientNode::twist_with_covariance_callback(
   const geometry_msgs::msg::TwistWithCovariance::SharedPtr msg)
 {
-  send_twist(msg->twist);
+  latest_twist_ = msg->twist;
+  has_twist_ = true;
 }
 
 void AutocubeClientNode::twist_with_covariance_stamped_callback(
   const geometry_msgs::msg::TwistWithCovarianceStamped::SharedPtr msg)
 {
-  send_twist(msg->twist.twist);
+  latest_twist_ = msg->twist.twist;
+  has_twist_ = true;
 }
 
 void AutocubeClientNode::odom_callback(const nav_msgs::msg::Odometry::SharedPtr msg)
+{
+  latest_odom_ = msg;
+}
+
+void AutocubeClientNode::twist_timer_callback()
+{
+  if (twist_type_ == "Odom") {
+    if (latest_odom_) {
+      send_odom(*latest_odom_);
+    }
+  } else if (has_twist_) {
+    send_twist(latest_twist_);
+  }
+}
+
+void AutocubeClientNode::send_odom(const nav_msgs::msg::Odometry & odom)
 {
   if (!odom_stream_) {
     RCLCPP_ERROR_THROTTLE(
@@ -173,25 +196,25 @@ void AutocubeClientNode::odom_callback(const nav_msgs::msg::Odometry::SharedPtr 
   autocube::OdomMessage odom_msg;
 
   auto * linear = odom_msg.mutable_twist()->mutable_linear();
-  linear->set_x(msg->twist.twist.linear.x);
-  linear->set_y(msg->twist.twist.linear.y);
-  linear->set_z(msg->twist.twist.linear.z);
+  linear->set_x(odom.twist.twist.linear.x);
+  linear->set_y(odom.twist.twist.linear.y);
+  linear->set_z(odom.twist.twist.linear.z);
 
   auto * angular = odom_msg.mutable_twist()->mutable_angular();
-  angular->set_x(msg->twist.twist.angular.x);
-  angular->set_y(msg->twist.twist.angular.y);
-  angular->set_z(msg->twist.twist.angular.z);
+  angular->set_x(odom.twist.twist.angular.x);
+  angular->set_y(odom.twist.twist.angular.y);
+  angular->set_z(odom.twist.twist.angular.z);
 
   auto * position = odom_msg.mutable_position();
-  position->set_x(msg->pose.pose.position.x);
-  position->set_y(msg->pose.pose.position.y);
-  position->set_z(msg->pose.pose.position.z);
+  position->set_x(odom.pose.pose.position.x);
+  position->set_y(odom.pose.pose.position.y);
+  position->set_z(odom.pose.pose.position.z);
 
   auto * orientation = odom_msg.mutable_orientation();
-  orientation->set_x(msg->pose.pose.orientation.x);
-  orientation->set_y(msg->pose.pose.orientation.y);
-  orientation->set_z(msg->pose.pose.orientation.z);
-  orientation->set_w(msg->pose.pose.orientation.w);
+  orientation->set_x(odom.pose.pose.orientation.x);
+  orientation->set_y(odom.pose.pose.orientation.y);
+  orientation->set_z(odom.pose.pose.orientation.z);
+  orientation->set_w(odom.pose.pose.orientation.w);
 
   if (!odom_stream_->Write(odom_msg)) {
     RCLCPP_ERROR_THROTTLE(
