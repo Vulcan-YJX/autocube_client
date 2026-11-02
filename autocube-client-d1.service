@@ -1,8 +1,5 @@
 [Unit]
 Description=Auto Cube ROS2 grpc client service.
-Requires=autocube-config.service
-After=autocube-config.service
-PartOf=autocube-config.service
 
 [Service]
 WorkingDirectory=/opt/autocube

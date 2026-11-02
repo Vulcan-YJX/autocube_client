@@ -1,4 +1,6 @@
-ros-humble-ros-base,autocube-config,libgrpc++-dev,protobuf-compiler-grpc,libprotobuf-dev,avahi-daemon,avahi-utils,libnss-mdns,nlohmann-json3-dev
+ros-humble-ros-base,libgrpc++-dev,protobuf-compiler-grpc,libprotobuf-dev,avahi-daemon,avahi-utils,libnss-mdns,nlohmann-json3-dev
+0.1.2
+    remove dependency.
 0.1.1
     fix env.
 0.1.0
